@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">FindMask</string>
+    <string name="title_activity_maps">Map</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="item1">˙身分證末一碼單數星期一、三、\u0020五;雙數星期二、四、六可憑健保卡購買。</string>
+</resources>
