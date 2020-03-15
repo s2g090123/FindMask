@@ -10,6 +10,7 @@ import com.example.findmask.network.MaskApi
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,6 +22,9 @@ class MapsViewModel(private val mMap: GoogleMap): ViewModel() {
     private val job = Job()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + job)
     var features = MutableLiveData<List<Features>>()
+    private val _nowFeature = MutableLiveData<Features>()
+    val nowFeature: LiveData<Features>
+        get() = _nowFeature
 
     init {
         getData()
@@ -45,8 +49,7 @@ class MapsViewModel(private val mMap: GoogleMap): ViewModel() {
     }
 
     fun addMarker(features: List<Features>) {
-        var tag = 0L
-        for(feature in features) {
+        for((tag, feature) in features.withIndex()) {
             val latitude = feature.geometry.coordinates[1]
             val longitude = feature.geometry.coordinates[0]
             val title = feature.properties.name
@@ -59,7 +62,10 @@ class MapsViewModel(private val mMap: GoogleMap): ViewModel() {
                     .title(title)
                     .snippet(snippet)
                     .icon(BitmapDescriptorFactory.defaultMarker(markerColor))).tag = tag
-            tag++
         }
+    }
+
+    fun showMarkerInfo(tag: Int) {
+        _nowFeature.value = features.value?.get(tag)
     }
 }

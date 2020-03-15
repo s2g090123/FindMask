@@ -3,17 +3,21 @@ package com.example.findmask
 
 import android.Manifest
 import android.app.Activity
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
 import android.content.pm.PackageManager
-import android.location.GnssStatus
-import android.location.GpsStatus
-import android.location.LocationManager
+import android.location.*
+import android.location.LocationListener
 import android.os.Bundle
+import android.transition.ChangeBounds
+import android.transition.TransitionManager
 import android.util.Log
 import android.view.*
+import android.view.animation.AnticipateInterpolator
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
@@ -36,18 +40,24 @@ import com.google.android.gms.maps.model.MarkerOptions
 /**
  * A simple [Fragment] subclass.
  */
-class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
+class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener, GoogleMap.OnMapClickListener, LocationListener {
 
     private lateinit var binding: FragmentMapsBinding
     private var mMap: GoogleMap? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
-    private var locationCallback: LocationCallback? = null
+    private lateinit var locationManager: LocationManager
 
-
+    private val permission = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     private lateinit var viewModel: MapsViewModel
+    private var isFirstIn = true
     private var locationPermissionGranted = false
-    private var locationUpdatedGranted = false
+    private var isAskGpsGranted = false
+    private var isAskLocationGranted = false
+    private var isClickMarker = false
+
+    private lateinit var constraintSet: ConstraintSet
+    private lateinit var transition: ChangeBounds
 
     companion object {
         private const val PERMISSION_REQUEST_CODE = 0
@@ -64,6 +74,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
         setHasOptionsMenu(true)
         (activity as AppCompatActivity).setSupportActionBar(binding.toolbar)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        locationManager = context!!.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context!!)
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
@@ -72,14 +83,20 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
 
     override fun onStop() {
         super.onStop()
-        if(locationCallback != null)
-            fusedLocationClient.removeLocationUpdates(locationCallback)
+        if(locationPermissionGranted && mMap != null) {
+            mMap!!.isMyLocationEnabled = false
+            locationManager.removeUpdates(this)
+        }
     }
 
     override fun onStart() {
         super.onStart()
-        if(locationPermissionGranted)
-            createLocationRequest()
+        if(mMap != null) {
+            if(isAskGpsGranted)
+                getLocationPermission()
+            else
+                getGpsRequest()
+        }
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
@@ -90,16 +107,28 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
             mMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(22.644684, 120.306005),16.0f))
             mMap!!.uiSettings.isZoomControlsEnabled = true
             mMap!!.setOnMarkerClickListener(this)
+            mMap!!.setOnMapClickListener(this)
             val viewModelFactory = MapsViewModelFactory(mMap!!)
             viewModel = ViewModelProvider(this,viewModelFactory).get(MapsViewModel::class.java)
             viewModel.features.observe(this, Observer {
                 viewModel.addMarker(it)
                 binding.transparentView.visibility = View.GONE
             })
-            createLocationRequest()
+            viewModel.nowFeature.observe(this, Observer {
+                it?.let {
+                    binding.infoDetail.visibility = View.VISIBLE
+                }
+            })
+            constraintSet = ConstraintSet()
+            constraintSet.clone(binding.main)
+            transition = ChangeBounds()
+            transition.interpolator = AnticipateInterpolator(0.5f)
+            transition.duration = 500
+            getGpsRequest()
         }
         else
             binding.transparentView.visibility = View.GONE
+        binding.viewModel = viewModel
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -110,6 +139,8 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when(item.itemId) {
             R.id.refresh -> {
+                if(isClickMarker)
+                    transitionDetail(false)
                 binding.transparentView.visibility = View.VISIBLE
                 mMap!!.clear()
                 viewModel.getData()
@@ -122,13 +153,16 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
     }
 
     private fun getLocationPermission() {
-        val permission = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
         if(ActivityCompat.checkSelfPermission(context!!,permission[0]) == PackageManager.PERMISSION_GRANTED) {
-            updateLocation()
             locationPermissionGranted = true
+            mMap!!.isMyLocationEnabled = true
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,5000,5.0f,this)
         }
         else
-            requestPermissions(permission,PERMISSION_REQUEST_CODE)
+            if(!isAskLocationGranted) {
+                requestPermissions(permission,PERMISSION_REQUEST_CODE)
+                isAskLocationGranted = true
+            }
     }
 
     override fun onRequestPermissionsResult(
@@ -144,33 +178,10 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
         }
     }
 
-    private fun updateLocation() {
-        locationCallback = object: LocationCallback() {
-            override fun onLocationResult(location: LocationResult?) {
-                if(location == null)
-                    Log.i("Test","Location is null")
-                else {
-                    if(!locationUpdatedGranted) {
-                        mMap!!.isMyLocationEnabled = true
-                        val position = location.lastLocation
-                        val currentLatLng = LatLng(position.latitude,position.longitude)
-                        mMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng,16.0f))
-                        locationUpdatedGranted = true
-                    }
-                }
-            }
-        }
-        fusedLocationClient.requestLocationUpdates(locationRequest,locationCallback,null)
-    }
-
-    private fun createLocationRequest() {
-        locationRequest = LocationRequest()
-        locationRequest.interval = 10000
-        locationRequest.fastestInterval = 5000
+    private fun getGpsRequest() {
+        locationRequest = LocationRequest.create()
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-
-        val builder = LocationSettingsRequest.Builder()
-            .addLocationRequest(locationRequest)
+        val builder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         val client = LocationServices.getSettingsClient(activity!!)
         val task = client.checkLocationSettings(builder.build())
 
@@ -179,12 +190,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
         }
         task.addOnFailureListener { e ->
             if (e is ResolvableApiException) {
-                // Location settings are not satisfied, but this can be fixed
-                // by showing the user a dialog.
                 try {
-                    // Show the dialog by calling startResolutionForResult(),
-                    // and check the result in onActivityResult().
-                    locationUpdatedGranted = false
                     e.startResolutionForResult(activity,GPS_REQUEST_CODE)
                 } catch (sendEx: IntentSender.SendIntentException) {
                     // Ignore the error.
@@ -196,6 +202,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == GPS_REQUEST_CODE) {
+            isAskGpsGranted = true
+            if(resultCode == Activity.RESULT_CANCELED)
+                isFirstIn = false
+            else if(resultCode == Activity.RESULT_OK)
+                isAskLocationGranted = false
             getLocationPermission()
         }
     }
@@ -203,8 +214,56 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
     override fun onMarkerClick(marker: Marker?): Boolean {
         marker?.let {
             val tag = marker.tag
-            Log.i("Test",tag.toString())
+            viewModel.showMarkerInfo(tag as Int)
+            if(!isClickMarker)
+                transitionDetail(true)
         }
         return false
+    }
+
+    override fun onMapClick(p0: LatLng?) {
+        if(isClickMarker)
+            transitionDetail(true)
+    }
+
+    override fun onLocationChanged(location: Location?) {
+        Log.i("Test","onLocationChanged (${location?.latitude},${location?.longitude})")
+        if(isFirstIn && location != null && mMap != null) {
+            val currentLatLng = LatLng(location.latitude,location.longitude)
+            mMap!!.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng,16.0f))
+            isFirstIn = false
+        }
+    }
+
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+        Log.i("Test","onStatusChanged")
+    }
+
+    override fun onProviderEnabled(provider: String?) {
+        if(locationPermissionGranted)
+            mMap!!.isMyLocationEnabled = true
+    }
+
+    override fun onProviderDisabled(provider: String?) {
+        if(mMap != null)
+            mMap!!.isMyLocationEnabled = false
+    }
+
+    private fun transitionDetail(animation: Boolean) {
+        if(isClickMarker) {
+            constraintSet.clear(R.id.info_detail,ConstraintSet.START)
+            constraintSet.connect(R.id.info_detail,ConstraintSet.END,ConstraintSet.PARENT_ID,ConstraintSet.START,0)
+            constraintSet.setMargin(R.id.info_detail,ConstraintSet.END,1)
+        }
+        else {
+            constraintSet.clear(R.id.info_detail,ConstraintSet.END)
+            constraintSet.connect(R.id.info_detail,ConstraintSet.START,ConstraintSet.PARENT_ID,ConstraintSet.START,0)
+        }
+        if(animation) {
+            constraintSet.setVisibility(R.id.transparent_view,View.GONE)
+            TransitionManager.beginDelayedTransition(binding.main,transition)
+        }
+        constraintSet.applyTo(binding.main)
+        isClickMarker = !isClickMarker
     }
 }

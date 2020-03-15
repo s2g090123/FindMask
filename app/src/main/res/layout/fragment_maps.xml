@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <data>
+        <variable
+            name="viewModel"
+            type="com.example.findmask.MapsViewModel" />
+    </data>
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/main"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <androidx.appcompat.widget.Toolbar
@@ -104,6 +111,127 @@
                 map:layout_constraintBottom_toTopOf="@id/loading_text"
                 map:layout_constraintStart_toStartOf="parent"
                 map:layout_constraintEnd_toEndOf="parent"/>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/info_detail"
+            android:layout_width="260dp"
+            android:layout_height="130dp"
+            android:background="#FFFFFF"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:paddingTop="5dp"
+            android:layout_marginEnd="1dp"
+            map:layout_constraintEnd_toStartOf="parent"
+            map:layout_constraintBottom_toBottomOf="parent">
+            <ImageView
+                android:id="@+id/image_name"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/baseline_house_black_18"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toTopOf="parent"/>
+            <TextView
+                android:id="@+id/text_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.nowFeature.properties.name}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_name"
+                map:layout_constraintTop_toTopOf="@id/image_name"
+                map:layout_constraintBottom_toBottomOf="@id/image_name"/>
+            <ImageView
+                android:id="@+id/image_address"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/baseline_place_black_18"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toBottomOf="@id/image_name"/>
+            <TextView
+                android:id="@+id/text_address"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.nowFeature.properties.address}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_address"
+                map:layout_constraintTop_toTopOf="@id/image_address"
+                map:layout_constraintBottom_toBottomOf="@id/image_address"/>
+            <ImageView
+                android:id="@+id/image_phone"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/baseline_local_phone_black_18"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toBottomOf="@id/image_address"/>
+            <TextView
+                android:id="@+id/text_phone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{viewModel.nowFeature.properties.phone}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_phone"
+                map:layout_constraintTop_toTopOf="@id/image_phone"
+                map:layout_constraintBottom_toBottomOf="@id/image_phone"/>
+            <ImageView
+                android:id="@+id/image_adult"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/ic_man_woman"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toBottomOf="@id/image_phone"/>
+            <TextView
+                android:id="@+id/text_adult"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{String.format(@string/mask_detail,viewModel.nowFeature.properties.maskAdult)}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_adult"
+                map:layout_constraintTop_toTopOf="@id/image_adult"
+                map:layout_constraintBottom_toBottomOf="@id/image_adult"/>
+            <ImageView
+                android:id="@+id/image_child"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/ic_boy_girl"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toBottomOf="@id/image_adult"/>
+            <TextView
+                android:id="@+id/text_child"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{String.format(@string/mask_detail,viewModel.nowFeature.properties.maskChild)}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_child"
+                map:layout_constraintTop_toTopOf="@id/image_child"
+                map:layout_constraintBottom_toBottomOf="@id/image_child"/>
+            <ImageView
+                android:id="@+id/image_time"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                app:srcCompat="@drawable/baseline_access_time_black_18"
+                map:layout_constraintStart_toStartOf="parent"
+                map:layout_constraintTop_toBottomOf="@id/image_child"/>
+            <TextView
+                android:id="@+id/text_image"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@{String.format(@string/updated_detail,viewModel.nowFeature.properties.updated)}"
+                android:paddingStart="8dp"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                map:layout_constraintStart_toEndOf="@id/image_time"
+                map:layout_constraintTop_toTopOf="@id/image_time"
+                map:layout_constraintBottom_toBottomOf="@id/image_time"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
