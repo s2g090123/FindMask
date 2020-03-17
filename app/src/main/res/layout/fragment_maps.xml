@@ -27,15 +27,31 @@
             map:layout_constraintTop_toBottomOf="@id/toolbar"
             map:layout_constraintBottom_toBottomOf="parent"
             tools:context=".MapsActivity" />
+        <EditText
+            android:id="@+id/input_search"
+            android:layout_width="320dp"
+            android:layout_height="35dp"
+            map:layout_constraintStart_toStartOf="parent"
+            map:layout_constraintTop_toBottomOf="@id/toolbar"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:textSize="15sp"
+            android:textColor="#000"
+            android:background="#FFFFFF"
+            android:hint="輸入要搜尋的地點..."
+            android:paddingStart="5dp"
+            android:inputType="none"
+            android:focusable="false"
+            android:cursorVisible="false"
+            android:imeOptions="actionSearch"/>
         <ImageView
             android:id="@+id/mask_danger"
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:background="@android:color/holo_red_dark"
-            map:layout_constraintStart_toStartOf="parent"
-            map:layout_constraintTop_toBottomOf="@id/toolbar"/>
+            map:layout_constraintStart_toStartOf="@id/input_search"
+            map:layout_constraintTop_toBottomOf="@id/input_search"/>
         <TextView
             android:id="@+id/text_danger"
             android:layout_width="wrap_content"

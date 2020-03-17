@@ -3,7 +3,6 @@ package com.example.findmask
 
 import android.Manifest
 import android.app.Activity
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -16,10 +15,10 @@ import android.transition.TransitionManager
 import android.util.Log
 import android.view.*
 import android.view.animation.AnticipateInterpolator
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -32,10 +31,13 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.AutocompleteActivity
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 
 /**
  * A simple [Fragment] subclass.
@@ -62,6 +64,7 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
     companion object {
         private const val PERMISSION_REQUEST_CODE = 0
         private const val GPS_REQUEST_CODE = 1
+        private const val AUTOCOMPLETE_EREQUEST_CODE = 2
     }
 
     override fun onCreateView(
@@ -74,8 +77,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
         setHasOptionsMenu(true)
         (activity as AppCompatActivity).setSupportActionBar(binding.toolbar)
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        binding.inputSearch.setOnClickListener { searchPlace() }
         locationManager = context!!.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(context!!)
+        if(!Places.isInitialized())
+            Places.initialize(context!!,getString(R.string.google_maps_key))
         val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
         return binding.root
@@ -126,8 +132,13 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
             transition.duration = 500
             getGpsRequest()
         }
-        else
+        else {
             binding.transparentView.visibility = View.GONE
+            if(isClickMarker) {
+                isClickMarker = false
+                transitionDetail(false)
+            }
+        }
         binding.viewModel = viewModel
     }
 
@@ -209,6 +220,15 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
                 isAskLocationGranted = false
             getLocationPermission()
         }
+        else if(requestCode == AUTOCOMPLETE_EREQUEST_CODE) {
+            if(resultCode == AutocompleteActivity.RESULT_OK && data != null) {
+                val place = Autocomplete.getPlaceFromIntent(data)
+                binding.inputSearch.setText(place.name)
+                mMap!!.moveCamera(CameraUpdateFactory.newLatLng(place.latLng))
+            }
+            else if(resultCode == AutocompleteActivity.RESULT_ERROR)
+                Toast.makeText(context,"查詢發生了問題",Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onMarkerClick(marker: Marker?): Boolean {
@@ -265,5 +285,11 @@ class MapsFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickList
         }
         constraintSet.applyTo(binding.main)
         isClickMarker = !isClickMarker
+    }
+
+    private fun searchPlace() {
+        val fields = listOf(Place.Field.ADDRESS,Place.Field.LAT_LNG,Place.Field.NAME)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY,fields).setCountry("TW").build(context!!)
+        startActivityForResult(intent, AUTOCOMPLETE_EREQUEST_CODE)
     }
 }

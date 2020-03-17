@@ -124,7 +124,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="˙身分證末一碼單數星期一、三、\n\u0020\u0020\u0020\u0020五;雙數星期二、四、六可憑健\n\u0020\u0020\u0020\u0020保卡購買"
-            android:textSize="22sp"
+            android:textSize="24sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"/>
         <TextView
@@ -132,7 +132,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="˙13歲含以下兒童健保卡不受單\n\u0020\u0020\u0020\u0020雙數限制"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:layout_marginTop="3dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/item1"/>
@@ -141,7 +141,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="˙星期日不限身分證字號，皆可至\n\u0020\u0020\u0020\u0020健保特約藥局或衛生所購買"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:layout_marginTop="3dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/item2"/>
@@ -150,7 +150,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="˙每人每7天限購一次"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:layout_marginTop="3dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/item3"/>
@@ -159,7 +159,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             tools:text="˙每日各販賣點成人口罩600片，\n\u0020\u0020\u0020\u0020兒童口罩200片"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:layout_marginTop="3dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/item4"/>
@@ -180,8 +180,4 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:text="詳情請查看疾病管制署官網"/>
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-
 </androidx.constraintlayout.widget.ConstraintLayout>
